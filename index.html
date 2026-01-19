@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hubstaff Knowledge Assistant</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0f1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a2234;
+            --bg-card-hover: #222d42;
+            --accent-green: #39d98a;
+            --accent-green-dim: rgba(57, 217, 138, 0.15);
+            --accent-blue: #5b8def;
+            --accent-purple: #a78bfa;
+            --accent-orange: #fb923c;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-dim: #64748b;
+            --border-color: #2d3a4f;
+            --slack-purple: #611f69;
+            --docs-blue: #2563eb;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Ambient background effect */
+        .ambient-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .ambient-bg::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(ellipse at 30% 20%, rgba(57, 217, 138, 0.08) 0%, transparent 50%),
+                        radial-gradient(ellipse at 70% 60%, rgba(91, 141, 239, 0.06) 0%, transparent 50%),
+                        radial-gradient(ellipse at 50% 80%, rgba(167, 139, 250, 0.04) 0%, transparent 40%);
+            animation: ambientPulse 20s ease-in-out infinite;
+        }
+
+        @keyframes ambientPulse {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(-2%, 1%) rotate(1deg); }
+            66% { transform: translate(1%, -1%) rotate(-1deg); }
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 8px 32px rgba(57, 217, 138, 0.3);
+        }
+
+        .logo-text {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text-primary), var(--text-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .tagline {
+            color: var(--text-secondary);
+            font-size: 16px;
+            max-width: 500px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* Search Section */
+        .search-section {
+            margin-bottom: 40px;
+        }
+
+        .search-container {
+            position: relative;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 20px 24px;
+            padding-right: 140px;
+            font-size: 16px;
+            font-family: inherit;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .search-box:focus {
+            border-color: var(--accent-green);
+            box-shadow: 0 0 0 4px var(--accent-green-dim),
+                        0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .search-box::placeholder {
+            color: var(--text-dim);
+        }
+
+        .search-btn {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            padding: 12px 24px;
+            background: linear-gradient(135deg, var(--accent-green), #2dd47a);
+            border: none;
+            border-radius: 10px;
+            color: var(--bg-primary);
+            font-family: inherit;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .search-btn:hover {
+            transform: translateY(-50%) scale(1.02);
+            box-shadow: 0 4px 20px rgba(57, 217, 138, 0.4);
+        }
+
+        .search-btn:active {
+            transform: translateY(-50%) scale(0.98);
+        }
+
+        /* Source Toggles */
+        .source-toggles {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .source-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 18px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .source-toggle:hover {
+            background: var(--bg-card-hover);
+        }
+
+        .source-toggle.active {
+            border-color: var(--accent-green);
+            background: var(--accent-green-dim);
+        }
+
+        .source-toggle input {
+            display: none;
+        }
+
+        .toggle-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 6px;
+            border: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .source-toggle.active .toggle-indicator {
+            background: var(--accent-green);
+            border-color: var(--accent-green);
+        }
+
+        .toggle-indicator svg {
+            width: 12px;
+            height: 12px;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .source-toggle.active .toggle-indicator svg {
+            opacity: 1;
+        }
+
+        .source-icon {
+            font-size: 18px;
+        }
+
+        .source-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .source-toggle.active .source-label {
+            color: var(--text-primary);
+        }
+
+        /* Results Section */
+        .results-section {
+            margin-top: 32px;
+        }
+
+        .ai-response {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 28px;
+            margin-bottom: 32px;
+            animation: fadeInUp 0.4s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .ai-response-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .ai-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .ai-label {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .ai-response-content {
+            color: var(--text-secondary);
+            line-height: 1.7;
+            font-size: 15px;
+        }
+
+        .ai-response-content p {
+            margin-bottom: 12px;
+        }
+
+        .ai-response-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Source Results */
+        .source-results {
+            display: grid;
+            gap: 24px;
+        }
+
+        .source-group {
+            animation: fadeInUp 0.4s ease;
+            animation-fill-mode: both;
+        }
+
+        .source-group:nth-child(1) { animation-delay: 0.1s; }
+        .source-group:nth-child(2) { animation-delay: 0.2s; }
+
+        .source-group-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .source-group-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .source-group-icon.slack {
+            background: linear-gradient(135deg, #611f69, #8b3d7d);
+        }
+
+        .source-group-icon.docs {
+            background: linear-gradient(135deg, var(--docs-blue), #3b82f6);
+        }
+
+        .source-group-title {
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .source-group-count {
+            margin-left: auto;
+            font-size: 13px;
+            color: var(--text-dim);
+            background: var(--bg-secondary);
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        /* Result Cards */
+        .result-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 12px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+        }
+
+        .result-card:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--accent-green);
+            transform: translateX(4px);
+        }
+
+        .result-card:last-child {
+            margin-bottom: 0;
+        }
+
+        .result-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .result-title {
+            font-weight: 600;
+            font-size: 15px;
+            color: var(--text-primary);
+            line-height: 1.4;
+        }
+
+        .result-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .result-channel, .result-category {
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+
+        .result-channel {
+            background: rgba(97, 31, 105, 0.2);
+            color: #d19fd8;
+        }
+
+        .result-category {
+            background: rgba(37, 99, 235, 0.2);
+            color: #93c5fd;
+        }
+
+        .result-snippet {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .result-snippet mark {
+            background: var(--accent-green-dim);
+            color: var(--accent-green);
+            padding: 1px 4px;
+            border-radius: 3px;
+        }
+
+        .result-footer {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-color);
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        .result-author {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .author-avatar {
+            width: 20px;
+            height: 20px;
+            border-radius: 6px;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-purple));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .result-date {
+            margin-left: auto;
+        }
+
+        /* Loading State */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--accent-green);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: var(--text-secondary);
+            font-size: 15px;
+        }
+
+        .loading-sources {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-top: 16px;
+        }
+
+        .loading-source {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
+        .loading-source-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .loading-source-dot.slack {
+            background: #611f69;
+        }
+
+        .loading-source-dot.docs {
+            background: var(--docs-blue);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.4; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .empty-description {
+            max-width: 400px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* Example Queries */
+        .example-queries {
+            margin-top: 32px;
+        }
+
+        .example-queries-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .example-queries-list {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .example-query {
+            padding: 10px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .example-query:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--accent-green);
+            color: var(--text-primary);
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 60px;
+            text-align: center;
+            padding: 24px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .footer-text {
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
+        .footer-text a {
+            color: var(--accent-green);
+            text-decoration: none;
+        }
+
+        .footer-text a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .container {
+                padding: 24px 16px;
+            }
+
+            .logo-text {
+                font-size: 22px;
+            }
+
+            .search-box {
+                padding: 16px 20px;
+                padding-right: 100px;
+                font-size: 15px;
+            }
+
+            .search-btn {
+                padding: 10px 16px;
+                font-size: 14px;
+            }
+
+            .source-toggles {
+                gap: 10px;
+            }
+
+            .source-toggle {
+                padding: 8px 14px;
+            }
+
+            .ai-response {
+                padding: 20px;
+            }
+
+            .result-card {
+                padding: 16px;
+            }
+
+            .example-query {
+                font-size: 12px;
+                padding: 8px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="ambient-bg"></div>
+    
+    <div class="container">
+        <header class="header">
+            <div class="logo-container">
+                <div class="logo-icon">🧠</div>
+                <span class="logo-text">Hubstaff Knowledge Assistant</span>
+            </div>
+            <p class="tagline">Search across Slack history and Help Docs instantly. Ask anything and get AI-powered answers with direct links to sources.</p>
+        </header>
+
+        <section class="search-section">
+            <div class="search-container">
+                <input type="text" class="search-box" id="searchInput" placeholder="Ask anything... e.g. 'How do I add manual time?'" autocomplete="off">
+                <button class="search-btn" id="searchBtn">Search</button>
+            </div>
+
+            <div class="source-toggles">
+                <label class="source-toggle active" id="slackToggle">
+                    <input type="checkbox" checked>
+                    <div class="toggle-indicator">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </div>
+                    <span class="source-icon">💬</span>
+                    <span class="source-label">Slack Messages</span>
+                </label>
+
+                <label class="source-toggle active" id="docsToggle">
+                    <input type="checkbox" checked>
+                    <div class="toggle-indicator">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </div>
+                    <span class="source-icon">📚</span>
+                    <span class="source-label">Help Docs</span>
+                </label>
+            </div>
+        </section>
+
+        <!-- Empty State -->
+        <div class="empty-state" id="emptyState">
+            <div class="empty-icon">🔍</div>
+            <h3 class="empty-title">Search your knowledge base</h3>
+            <p class="empty-description">Ask a question in natural language and get answers from both Slack conversations and official Help documentation.</p>
+            
+            <div class="example-queries">
+                <div class="example-queries-title">Try asking</div>
+                <div class="example-queries-list">
+                    <div class="example-query" data-query="How do I add manual time entries?">How do I add manual time?</div>
+                    <div class="example-query" data-query="Why is activity level showing 0%?">Why is activity 0%?</div>
+                    <div class="example-query" data-query="How to set up Asana integration?">Asana integration setup</div>
+                    <div class="example-query" data-query="User can't see screenshots">Missing screenshots issue</div>
+                    <div class="example-query" data-query="How to enable GPS tracking?">Enable GPS tracking</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div class="loading" id="loadingState">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">Searching knowledge base...</div>
+            <div class="loading-sources">
+                <div class="loading-source">
+                    <div class="loading-source-dot slack"></div>
+                    <span>Slack</span>
+                </div>
+                <div class="loading-source">
+                    <div class="loading-source-dot docs"></div>
+                    <span>Help Docs</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <section class="results-section" id="resultsSection" style="display: none;">
+            <div class="ai-response" id="aiResponse">
+                <div class="ai-response-header">
+                    <div class="ai-icon">✨</div>
+                    <span class="ai-label">AI Summary</span>
+                </div>
+                <div class="ai-response-content" id="aiContent">
+                    <!-- AI response will be inserted here -->
+                </div>
+            </div>
+
+            <div class="source-results" id="sourceResults">
+                <!-- Source results will be inserted here -->
+            </div>
+        </section>
+
+        <footer class="footer">
+            <p class="footer-text">Built for Hubstaff AI Hackathon 2026 by Team Knowledge · Powered by Claude API</p>
+        </footer>
+    </div>
+
+    <script>
+        // DOM Elements
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const slackToggle = document.getElementById('slackToggle');
+        const docsToggle = document.getElementById('docsToggle');
+        const emptyState = document.getElementById('emptyState');
+        const loadingState = document.getElementById('loadingState');
+        const resultsSection = document.getElementById('resultsSection');
+        const aiContent = document.getElementById('aiContent');
+        const sourceResults = document.getElementById('sourceResults');
+
+        // Toggle handlers
+        [slackToggle, docsToggle].forEach(toggle => {
+            toggle.addEventListener('click', () => {
+                toggle.classList.toggle('active');
+            });
+        });
+
+        // Example query handlers
+        document.querySelectorAll('.example-query').forEach(el => {
+            el.addEventListener('click', () => {
+                searchInput.value = el.dataset.query;
+                performSearch();
+            });
+        });
+
+        // Search handlers
+        searchBtn.addEventListener('click', performSearch);
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') performSearch();
+        });
+
+        // Mock data - In production, this would come from actual API calls
+        const mockData = {
+            slack: [
+                {
+                    title: "Re: Manual time not showing up",
+                    snippet: "The user needs to have <mark>Modify Time</mark> enabled in their org settings. Check Settings > Activity & Tracking > Timesheets > <mark>Modify time</mark>. This is the most common cause.",
+                    channel: "#support-tier2",
+                    author: "Orest",
+                    date: "2 days ago",
+                    url: "https://hubstaff.slack.com/archives/C123/p456"
+                },
+                {
+                    title: "Manual time FAQ answers",
+                    snippet: "Remember that <mark>manual time</mark> will always show 0% activity - this is expected behavior. Also, if they're trying to add time over existing entries, it will overwrite.",
+                    channel: "#support-general",
+                    author: "Sarah K",
+                    date: "1 week ago",
+                    url: "https://hubstaff.slack.com/archives/C789/p012"
+                },
+                {
+                    title: "Tip: Calendar view for manual time",
+                    snippet: "Pro tip: The Calendar view in Timesheets is actually the easiest way to add <mark>manual time</mark> - just click on any block to add or edit.",
+                    channel: "#tips-tricks",
+                    author: "Matt O",
+                    date: "3 weeks ago",
+                    url: "https://hubstaff.slack.com/archives/C345/p678"
+                }
+            ],
+            docs: [
+                {
+                    title: "How can I add, delete, or edit time manually?",
+                    snippet: "It is possible to add, delete or edit <mark>time manually</mark> in Hubstaff via Daily and Weekly Timesheets as well as the Calendar. The Modify Time setting needs to be enabled for users...",
+                    category: "Activity & Tracking",
+                    date: "Updated Jan 2026",
+                    url: "https://support.hubstaff.com/how-to-add-delete-and-edit-manual-time-entries/"
+                },
+                {
+                    title: "Modify Time Organization Settings",
+                    snippet: "To provide access for team members to add and edit <mark>time entries manually</mark>, click on Settings from the main navigation bar, then select Activity & Tracking...",
+                    category: "Organization Settings",
+                    date: "Updated Dec 2025",
+                    url: "https://support.hubstaff.com/organization-settings/#modifytime"
+                }
+            ],
+            aiSummary: `<p>To add manual time in Hubstaff, you'll need to ensure the <strong>Modify Time</strong> setting is enabled for the user (Settings → Activity & Tracking → Timesheets → Modify time).</p>
+            <p>Once enabled, there are three ways to add manual time:</p>
+            <p>1. <strong>Daily Timesheets</strong> - Navigate to Timesheets → View & edit, select the user, and click "Add time"</p>
+            <p>2. <strong>Weekly Timesheets</strong> - Same navigation, but select "Weekly" view first</p>
+            <p>3. <strong>Calendar View</strong> - Often the easiest method - just click on any time block to add or edit</p>
+            <p><em>Note:</em> Manual time always shows 0% activity (this is expected), and adding time over existing entries will overwrite them - this cannot be undone.</p>`
+        };
+
+        function performSearch() {
+            const query = searchInput.value.trim();
+            if (!query) return;
+
+            // Show loading state
+            emptyState.style.display = 'none';
+            resultsSection.style.display = 'none';
+            loadingState.classList.add('active');
+
+            // Simulate API delay
+            setTimeout(() => {
+                displayResults(query);
+            }, 1500);
+        }
+
+        function displayResults(query) {
+            loadingState.classList.remove('active');
+            resultsSection.style.display = 'block';
+
+            // Set AI summary
+            aiContent.innerHTML = mockData.aiSummary;
+
+            // Build source results
+            let resultsHTML = '';
+
+            const showSlack = slackToggle.classList.contains('active');
+            const showDocs = docsToggle.classList.contains('active');
+
+            if (showSlack && mockData.slack.length > 0) {
+                resultsHTML += `
+                    <div class="source-group">
+                        <div class="source-group-header">
+                            <div class="source-group-icon slack">💬</div>
+                            <span class="source-group-title">Slack Conversations</span>
+                            <span class="source-group-count">${mockData.slack.length} results</span>
+                        </div>
+                        ${mockData.slack.map(item => createSlackCard(item)).join('')}
+                    </div>
+                `;
+            }
+
+            if (showDocs && mockData.docs.length > 0) {
+                resultsHTML += `
+                    <div class="source-group">
+                        <div class="source-group-header">
+                            <div class="source-group-icon docs">📚</div>
+                            <span class="source-group-title">Help Documentation</span>
+                            <span class="source-group-count">${mockData.docs.length} results</span>
+                        </div>
+                        ${mockData.docs.map(item => createDocsCard(item)).join('')}
+                    </div>
+                `;
+            }
+
+            sourceResults.innerHTML = resultsHTML;
+        }
+
+        function createSlackCard(item) {
+            const initials = item.author.split(' ').map(n => n[0]).join('');
+            return `
+                <a href="${item.url}" target="_blank" class="result-card">
+                    <div class="result-header">
+                        <span class="result-title">${item.title}</span>
+                        <div class="result-meta">
+                            <span class="result-channel">${item.channel}</span>
+                        </div>
+                    </div>
+                    <p class="result-snippet">${item.snippet}</p>
+                    <div class="result-footer">
+                        <div class="result-author">
+                            <div class="author-avatar">${initials}</div>
+                            <span>${item.author}</span>
+                        </div>
+                        <span class="result-date">${item.date}</span>
+                    </div>
+                </a>
+            `;
+        }
+
+        function createDocsCard(item) {
+            return `
+                <a href="${item.url}" target="_blank" class="result-card">
+                    <div class="result-header">
+                        <span class="result-title">${item.title}</span>
+                        <div class="result-meta">
+                            <span class="result-category">${item.category}</span>
+                        </div>
+                    </div>
+                    <p class="result-snippet">${item.snippet}</p>
+                    <div class="result-footer">
+                        <span class="result-date">${item.date}</span>
+                    </div>
+                </a>
+            `;
+        }
+    </script>
+</body>
+</html>
