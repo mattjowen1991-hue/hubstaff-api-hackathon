@@ -22,6 +22,7 @@
             --border-color: #2d3a4f;
             --slack-purple: #611f69;
             --docs-blue: #2563eb;
+            --outlier-amber: #f59e0b;
         }
 
         * {
@@ -359,6 +360,10 @@
             background: linear-gradient(135deg, var(--docs-blue), #3b82f6);
         }
 
+        .source-group-icon.outlier {
+            background: linear-gradient(135deg, var(--outlier-amber), #d97706);
+        }
+
         .source-group-title {
             font-weight: 600;
             font-size: 16px;
@@ -433,6 +438,11 @@
         .result-category {
             background: rgba(37, 99, 235, 0.2);
             color: #93c5fd;
+        }
+
+        .result-policy {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fcd34d;
         }
 
         .result-snippet {
@@ -543,6 +553,10 @@
 
         .loading-source-dot.docs {
             background: var(--docs-blue);
+        }
+
+        .loading-source-dot.outlier {
+            background: var(--outlier-amber);
         }
 
         @keyframes pulse {
@@ -690,7 +704,7 @@
                 <div class="logo-icon">🧠</div>
                 <span class="logo-text">Hubstaff Knowledge Assistant</span>
             </div>
-            <p class="tagline">Search across Slack history and Help Docs instantly. Ask anything and get AI-powered answers with direct links to sources.</p>
+            <p class="tagline">Search across Slack, Help Docs, and Internal Policies instantly. Ask anything and get AI-powered answers with direct links to sources.</p>
         </header>
 
         <section class="search-section">
@@ -721,6 +735,17 @@
                     <span class="source-icon">📚</span>
                     <span class="source-label">Help Docs</span>
                 </label>
+
+                <label class="source-toggle active" id="outlierToggle">
+                    <input type="checkbox" checked>
+                    <div class="toggle-indicator">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </div>
+                    <span class="source-icon">📋</span>
+                    <span class="source-label">Internal Policies</span>
+                </label>
             </div>
         </section>
 
@@ -734,10 +759,11 @@
                 <div class="example-queries-title">Try asking</div>
                 <div class="example-queries-list">
                     <div class="example-query" data-query="How do I add manual time entries?">How do I add manual time?</div>
-                    <div class="example-query" data-query="Why is activity level showing 0%?">Why is activity 0%?</div>
+                    <div class="example-query" data-query="What is our refund policy?">Refund policy</div>
                     <div class="example-query" data-query="How to set up Asana integration?">Asana integration setup</div>
+                    <div class="example-query" data-query="What discounts can we offer?">Discount guidelines</div>
                     <div class="example-query" data-query="User can't see screenshots">Missing screenshots issue</div>
-                    <div class="example-query" data-query="How to enable GPS tracking?">Enable GPS tracking</div>
+                    <div class="example-query" data-query="How to handle billing disputes?">Billing disputes</div>
                 </div>
             </div>
         </div>
@@ -754,6 +780,10 @@
                 <div class="loading-source">
                     <div class="loading-source-dot docs"></div>
                     <span>Help Docs</span>
+                </div>
+                <div class="loading-source">
+                    <div class="loading-source-dot outlier"></div>
+                    <span>Policies</span>
                 </div>
             </div>
         </div>
@@ -786,6 +816,7 @@
         const searchBtn = document.getElementById('searchBtn');
         const slackToggle = document.getElementById('slackToggle');
         const docsToggle = document.getElementById('docsToggle');
+        const outlierToggle = document.getElementById('outlierToggle');
         const emptyState = document.getElementById('emptyState');
         const loadingState = document.getElementById('loadingState');
         const resultsSection = document.getElementById('resultsSection');
@@ -793,7 +824,7 @@
         const sourceResults = document.getElementById('sourceResults');
 
         // Toggle handlers
-        [slackToggle, docsToggle].forEach(toggle => {
+        [slackToggle, docsToggle, outlierToggle].forEach(toggle => {
             toggle.addEventListener('click', () => {
                 toggle.classList.toggle('active');
             });
@@ -857,12 +888,26 @@
                     url: "https://support.hubstaff.com/organization-settings/#modifytime"
                 }
             ],
-            aiSummary: `<p>To add manual time in Hubstaff, you'll need to ensure the <strong>Modify Time</strong> setting is enabled for the user (Settings → Activity & Tracking → Timesheets → Modify time).</p>
-            <p>Once enabled, there are three ways to add manual time:</p>
-            <p>1. <strong>Daily Timesheets</strong> - Navigate to Timesheets → View & edit, select the user, and click "Add time"</p>
-            <p>2. <strong>Weekly Timesheets</strong> - Same navigation, but select "Weekly" view first</p>
-            <p>3. <strong>Calendar View</strong> - Often the easiest method - just click on any time block to add or edit</p>
-            <p><em>Note:</em> Manual time always shows 0% activity (this is expected), and adding time over existing entries will overwrite them - this cannot be undone.</p>`
+            outlier: [
+                {
+                    title: "Manual Time Adjustment Policy",
+                    snippet: "When a customer requests <mark>manual time</mark> to be added by support: Verify the user has tracking enabled. For adjustments over 8 hours, escalate to T2. Document all changes in ticket notes.",
+                    category: "Support Procedures",
+                    date: "Updated Nov 2025",
+                    url: "https://outlier.hubstaff.com/manual-time-policy"
+                },
+                {
+                    title: "Refund Guidelines for Time Tracking Issues",
+                    snippet: "If <mark>manual time</mark> was lost due to a platform bug: Offer prorated credit for affected period. Maximum refund: 1 month subscription. Requires manager approval for credits over $100.",
+                    category: "Refunds & Credits",
+                    date: "Updated Dec 2025",
+                    url: "https://outlier.hubstaff.com/refund-guidelines"
+                }
+            ],
+            aiSummary: `<p>To add manual time in Hubstaff, the <strong>Modify Time</strong> setting must be enabled (Settings → Activity & Tracking → Timesheets → Modify time).</p>
+            <p><strong>For the user:</strong> They can add time via Daily/Weekly Timesheets or Calendar view (often the easiest). Manual time always shows 0% activity - this is expected.</p>
+            <p><strong>For support handling:</strong> Per our internal policy, verify tracking is enabled first. For adjustments over 8 hours, escalate to T2. If time was lost due to a bug, we can offer prorated credit (max 1 month, manager approval needed for >$100).</p>
+            <p><em>⚠️ Important:</em> Adding time over existing entries will overwrite them permanently.</p>`
         };
 
         function performSearch() {
@@ -892,6 +937,7 @@
 
             const showSlack = slackToggle.classList.contains('active');
             const showDocs = docsToggle.classList.contains('active');
+            const showOutlier = outlierToggle.classList.contains('active');
 
             if (showSlack && mockData.slack.length > 0) {
                 resultsHTML += `
@@ -902,6 +948,19 @@
                             <span class="source-group-count">${mockData.slack.length} results</span>
                         </div>
                         ${mockData.slack.map(item => createSlackCard(item)).join('')}
+                    </div>
+                `;
+            }
+
+            if (showOutlier && mockData.outlier.length > 0) {
+                resultsHTML += `
+                    <div class="source-group">
+                        <div class="source-group-header">
+                            <div class="source-group-icon outlier">📋</div>
+                            <span class="source-group-title">Internal Policies (Outlier)</span>
+                            <span class="source-group-count">${mockData.outlier.length} results</span>
+                        </div>
+                        ${mockData.outlier.map(item => createOutlierCard(item)).join('')}
                     </div>
                 `;
             }
@@ -951,6 +1010,23 @@
                         <span class="result-title">${item.title}</span>
                         <div class="result-meta">
                             <span class="result-category">${item.category}</span>
+                        </div>
+                    </div>
+                    <p class="result-snippet">${item.snippet}</p>
+                    <div class="result-footer">
+                        <span class="result-date">${item.date}</span>
+                    </div>
+                </a>
+            `;
+        }
+
+        function createOutlierCard(item) {
+            return `
+                <a href="${item.url}" target="_blank" class="result-card">
+                    <div class="result-header">
+                        <span class="result-title">${item.title}</span>
+                        <div class="result-meta">
+                            <span class="result-policy">${item.category}</span>
                         </div>
                     </div>
                     <p class="result-snippet">${item.snippet}</p>
